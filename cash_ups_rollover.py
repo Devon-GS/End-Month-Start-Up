@@ -11,9 +11,11 @@ from typing import Iterable
 
 
 def _load_openpyxl():
-    site_packages = Path(r"C:\Users\Devon\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\site-packages")
-    if site_packages.exists():
-        sys.path.insert(0, str(site_packages))
+    project_site_packages = Path(__file__).resolve().parent / "venv" / "Lib" / "site-packages"
+    if project_site_packages.exists():
+        sys.path.insert(0, str(project_site_packages))
+    else:
+        raise RuntimeError("Project virtual environment not found at venv\\Lib\\site-packages")
     import openpyxl  # type: ignore
     from openpyxl.cell.cell import MergedCell  # type: ignore
 

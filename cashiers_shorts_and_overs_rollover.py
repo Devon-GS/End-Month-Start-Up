@@ -4,14 +4,17 @@ import argparse
 import re
 import shutil
 import sys
+from copy import copy
 from datetime import date
 from pathlib import Path
 
 
 def _load_openpyxl():
-    package_dir = Path(r"C:\Users\Devon\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\site-packages")
-    if package_dir.exists():
-        sys.path.insert(0, str(package_dir))
+    project_site_packages = Path(__file__).resolve().parent / "venv" / "Lib" / "site-packages"
+    if project_site_packages.exists():
+        sys.path.insert(0, str(project_site_packages))
+    else:
+        raise RuntimeError("Project virtual environment not found at venv\\Lib\\site-packages")
     import openpyxl  # type: ignore
 
     return openpyxl
@@ -103,6 +106,18 @@ def clear_cells(ws, ranges: list[str]) -> None:
                 cell.value = None
 
 
+def reset_range_style(ws, cell_range: str) -> None:
+    from openpyxl.styles import PatternFill
+
+    for row in ws[cell_range]:
+        for cell in row:
+            new_font = copy(cell.font)
+            new_font.color = "FF000000"
+            cell.font = new_font
+
+            cell.fill = PatternFill()
+
+
 def process_cashiers_shorts_and_overs(root: Path, dry_run: bool = False) -> tuple[Path, Path]:
     cashiers_root = root / "DAILY PROCEDURE DOCUMENTS" / "CASHIERS SHORTS AND OVERS"
     tax_year_folder = find_latest_tax_year_folder(cashiers_root)
@@ -129,6 +144,7 @@ def process_cashiers_shorts_and_overs(root: Path, dry_run: bool = False) -> tupl
             "H2:H32",
         ],
     )
+    reset_range_style(ws, "B2:F32")
 
     wb.save(target_workbook)
     return source_workbook, target_workbook
