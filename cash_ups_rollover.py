@@ -5,6 +5,7 @@ import re
 import shutil
 import sys
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import Iterable
 
@@ -148,13 +149,21 @@ def apply_cash_ups_rules(target_workbook: Path, source_workbook: Path) -> None:
 
     ws_target = target["CASH UP"]
     ws_source_data = data_only_source["CASH UP"]
+    ws_brazier = target["BRAZIER"]
+    ws_cash = target["CASH"]
+
+    match = re.search(r"CONTROL SHEET DAILY\s+(\d{1,2})\s+([A-Z]+)\s+(\d{4})\.XLSX$", target_workbook.name.upper())
+    if not match:
+        raise ValueError(f"Could not determine target date from {target_workbook.name}")
+    target_month = MONTH_NAMES.index(match.group(2)) + 1
+    target_date = date(int(match.group(3)), target_month, int(match.group(1)))
 
     # Update the header values before clearing the working area.
     ws_target["A2"] = increment_batch_label(ws_target["A2"].value)
     ws_target["D42"] = ws_source_data["D48"].value
     ws_target["A47"] = "Add Cash Received (AIRTIME R0  ,BIL R0)"
-
-    print(ws_source_data["D48"].value)
+    ws_brazier["B1"] = target_date
+    ws_brazier["B1"].number_format = "dd/mm/yyyy"
 
     clear_unprotected_cells(
         ws_target,
@@ -167,6 +176,20 @@ def apply_cash_ups_rules(target_workbook: Path, source_workbook: Path) -> None:
             "B38:E38",
             "D44:D47",
             "H6:H8",
+        ],
+    )
+    clear_unprotected_cells(
+        ws_brazier,
+        [
+            "B5:B27",
+            "E5:E27",
+        ],
+    )
+    clear_unprotected_cells(
+        ws_cash,
+        [
+            "G3:G14",
+            "G24:G35",
         ],
     )
 
