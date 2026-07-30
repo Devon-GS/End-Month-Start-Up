@@ -58,7 +58,7 @@ def find_latest_sheet(wb: openpyxl.Workbook):
 
 
 def build_new_sheet_title(month: int, year: int) -> str:
-    return f"BILL PAY B LABEL {month_name(month).title()} {str(year)[-2:]}"
+    return f"BILL PAY B LABEL {month_name(month)} {str(year)[-2:]}"
 
 
 def find_latest_tax_year_folder(root: Path) -> Path:
