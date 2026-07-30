@@ -3,26 +3,13 @@ from __future__ import annotations
 import argparse
 import re
 import shutil
-import sys
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 from typing import Iterable
 
-
-def _load_openpyxl():
-    project_site_packages = Path(__file__).resolve().parent / "venv" / "Lib" / "site-packages"
-    if project_site_packages.exists():
-        sys.path.insert(0, str(project_site_packages))
-    else:
-        raise RuntimeError("Project virtual environment not found at venv\\Lib\\site-packages")
-    import openpyxl  # type: ignore
-    from openpyxl.cell.cell import MergedCell  # type: ignore
-
-    return openpyxl, MergedCell
-
-
-openpyxl, MergedCell = _load_openpyxl()
+import openpyxl
+from openpyxl.cell.cell import MergedCell
 
 
 MONTH_NAMES = [
