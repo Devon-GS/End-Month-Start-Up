@@ -149,6 +149,13 @@ def apply_cash_ups_rules(target_workbook: Path, source_workbook: Path) -> None:
     ws_target = target["CASH UP"]
     ws_source_data = data_only_source["CASH UP"]
 
+    # Update the header values before clearing the working area.
+    ws_target["A2"] = increment_batch_label(ws_target["A2"].value)
+    ws_target["D42"] = ws_source_data["D48"].value
+    ws_target["A47"] = "Add Cash Received (AIRTIME R0  ,BIL R0)"
+
+    print(ws_source_data["D48"].value)
+
     clear_unprotected_cells(
         ws_target,
         [
@@ -162,9 +169,6 @@ def apply_cash_ups_rules(target_workbook: Path, source_workbook: Path) -> None:
             "H6:H8",
         ],
     )
-
-    ws_target["A2"] = increment_batch_label(ws_target["A2"].value)
-    ws_target["D42"] = ws_source_data["D48"].value
 
     target.save(target_workbook)
 
