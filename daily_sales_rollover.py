@@ -107,6 +107,25 @@ def update_monthly_day_range(ws, start_row: int, month: int, year: int) -> None:
         ws[f"A{row}"] = current
 
 
+def process_product_sheet(ws, data_ws, month: int, year: int) -> None:
+    update_monthly_day_range(ws, 6, month, year)
+
+    k36_value = data_ws["K36"].value
+    if k36_value is None or k36_value == 0 or k36_value == "0":
+        k36_value = data_ws["K35"].value
+    ws["K2"] = k36_value
+
+    t36_value = data_ws["T36"].value
+    if t36_value is None or t36_value == 0 or t36_value == "0":
+        t36_value = data_ws["T35"].value
+    ws["T2"] = t36_value
+
+    clear_range(ws, "B6:J36")
+    clear_range(ws, "M6:M36")
+    clear_range(ws, "O6:P36")
+    clear_range(ws, "R6:S36")
+
+
 def process_daily_sales(root: Path, dry_run: bool = False) -> tuple[Path, Path]:
     sales_root = root / "DAILY PROCEDURE DOCUMENTS" / "DAILY SALES"
     tax_year_folder = find_latest_tax_year_folder(sales_root)
@@ -164,6 +183,12 @@ def process_daily_sales(root: Path, dry_run: bool = False) -> tuple[Path, Path]:
     clear_range(ulp_t1, "M6:M36")
     clear_range(ulp_t1, "O6:P36")
     clear_range(ulp_t1, "R6:S36")
+
+    ulp_t3 = wb["ULP 95 T3"]
+    process_product_sheet(ulp_t3, data_wb["ULP 95 T3"], next_month_number, next_year)
+
+    process_product_sheet(wb["Tdiesel ULS T2 (OLD LRP)"], data_wb["Tdiesel ULS T2 (OLD LRP)"], next_month_number, next_year)
+    process_product_sheet(wb["Tdiesel ULS T4"], data_wb["Tdiesel ULS T4"], next_month_number, next_year)
 
     wb.save(target_workbook)
     return source_path, target_workbook
