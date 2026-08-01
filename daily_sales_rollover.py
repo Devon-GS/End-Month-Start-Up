@@ -99,6 +99,14 @@ def update_reference_dates(ws, month: int, year: int) -> None:
     ws["B41"] = ref_date
 
 
+def update_monthly_day_range(ws, start_row: int, month: int, year: int) -> None:
+    days_in_month = calendar.monthrange(year, month)[1]
+    for offset in range(days_in_month):
+        row = start_row + offset
+        current = date(year, month, offset + 1)
+        ws[f"A{row}"] = current
+
+
 def process_daily_sales(root: Path, dry_run: bool = False) -> tuple[Path, Path]:
     sales_root = root / "DAILY PROCEDURE DOCUMENTS" / "DAILY SALES"
     tax_year_folder = find_latest_tax_year_folder(sales_root)
@@ -124,16 +132,38 @@ def process_daily_sales(root: Path, dry_run: bool = False) -> tuple[Path, Path]:
     shutil.copy2(source_path, target_workbook)
 
     wb = openpyxl.load_workbook(target_workbook)
-    ws = wb["TOTAL SALES"]
+    data_wb = openpyxl.load_workbook(source_path, data_only=True)
+    total_sales = wb["TOTAL SALES"]
+    ulp_t1 = wb["ULP 95 T1"]
+    source_ulp_t1 = data_wb["ULP 95 T1"]
 
-    ws["G3"] = month_name(next_month_number)
-    set_date_range(ws, 5, next_month_number, next_year)
-    clear_range(ws, "D5:G35")
-    clear_range(ws, "J5:T35")
-    update_reference_dates(ws, next_month_number, next_year)
-    clear_range(ws, "C40:G41")
-    clear_range(ws, "J40:T41")
-    ws["A37"] = 1
+    total_sales["G3"] = month_name(next_month_number)
+    set_date_range(total_sales, 5, next_month_number, next_year)
+    clear_range(total_sales, "D5:G35")
+    clear_range(total_sales, "J5:T35")
+    update_reference_dates(total_sales, next_month_number, next_year)
+    clear_range(total_sales, "C40:G41")
+    clear_range(total_sales, "J40:T41")
+    total_sales["A37"] = 1
+
+    ref_date = date(next_year, next_month_number, 1)
+    ulp_t1["W1"] = ref_date
+    update_monthly_day_range(ulp_t1, 6, next_month_number, next_year)
+
+    k36_value = source_ulp_t1["K36"].value
+    if k36_value is None or k36_value == 0 or k36_value == "0":
+        k36_value = source_ulp_t1["K35"].value
+    ulp_t1["K2"] = k36_value
+
+    t36_value = source_ulp_t1["T36"].value
+    if t36_value is None or t36_value == 0 or t36_value == "0":
+        t36_value = source_ulp_t1["T35"].value
+    ulp_t1["T2"] = t36_value
+
+    clear_range(ulp_t1, "B6:J36")
+    clear_range(ulp_t1, "M6:M36")
+    clear_range(ulp_t1, "O6:P36")
+    clear_range(ulp_t1, "R6:S36")
 
     wb.save(target_workbook)
     return source_path, target_workbook
