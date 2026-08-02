@@ -11,58 +11,65 @@ import openpyxl
 
 
 MONTH_NAMES = [
-    "JANUARY",
-    "FEBRUARY",
-    "MARCH",
-    "APRIL",
-    "MAY",
-    "JUNE",
-    "JULY",
-    "AUGUST",
-    "SEPTEMBER",
-    "OCTOBER",
-    "NOVEMBER",
-    "DECEMBER",
+	"JANUARY",
+	"FEBRUARY",
+	"MARCH",
+	"APRIL",
+	"MAY",
+	"JUNE",
+	"JULY",
+	"AUGUST",
+	"SEPTEMBER",
+	"OCTOBER",
+	"NOVEMBER",
+	"DECEMBER",
 ]
 
 
 def month_name(month: int) -> str:
-    return MONTH_NAMES[month - 1]
+	return MONTH_NAMES[month - 1]
 
 
 def next_month(month: int, year: int) -> tuple[int, int]:
-    if month == 12:
-        return 1, year + 1
-    return month + 1, year
+	if month == 12:
+		return 1, year + 1
+	return month + 1, year
 
 
 def parse_workbook_name(path: Path) -> tuple[int, int, int]:
-    match = re.match(r"^(\d{2})\s+CASHER SHORT AND OVER DAILY\s+([A-Z]+)\s+(\d{4})\.XLSX$", path.name.upper())
-    if not match:
-        raise ValueError(f"Unrecognized workbook name: {path.name}")
+	match = re.match(r"^(\d{2})\s+CASHER SHORT AND OVER DAILY\s+([A-Z]+)\s+(\d{4})\.XLSX$", path.name.upper())
+	if not match:
+		raise ValueError(f"Unrecognized workbook name: {path.name}")
 
-    prefix = int(match.group(1))
-    month_text = match.group(2)
-    year = int(match.group(3))
+	prefix = int(match.group(1))
+	month_text = match.group(2)
+	year = int(match.group(3))
 
-    try:
-        month = MONTH_NAMES.index(month_text) + 1
-    except ValueError as exc:
-        raise ValueError(f"Unrecognized month name in workbook: {path.name}") from exc
+	try:
+		month = MONTH_NAMES.index(month_text) + 1
+	except ValueError as exc:
+		raise ValueError(f"Unrecognized month name in workbook: {path.name}") from exc
 
-    return prefix, month, year
+	return prefix, month, year
 
 
 def find_latest_tax_year_folder(root: Path) -> Path:
-    candidates = [
-        p
-        for p in root.iterdir()
-        if p.is_dir() and "CASHERS SHORTS AND OVERS TAX YR" in p.name.upper()
-    ]
-    if not candidates:
-        raise FileNotFoundError(f"No cashiers tax year folders found in {root}")
-    return sorted(candidates)[-1]
+	candidates = [
+			p
+			for p in root.iterdir()
+			if p.is_dir() and "CASHERS SHORTS AND OVERS TAX YR" in p.name.upper()
+		]
+	if not candidates:
+			raise FileNotFoundError(f"No cashiers tax year folders found in {root}")
+		
+	def get_sort_number(path: Path) -> int:
+		try:
+			# Splits by space and converts the first part ("10", "2", etc.) to an integer
+			return int(path.name.split()[0])
+		except ValueError:
+			return 0  # Fallback just in case a folder doesn't start with a number
 
+	return sorted(candidates, key=get_sort_number)[-1]
 
 def find_latest_source_workbook(tax_year_folder: Path) -> Path:
     candidates = []
