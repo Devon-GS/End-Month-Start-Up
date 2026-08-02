@@ -199,6 +199,8 @@ def process_daily_sales(root: Path, dry_run: bool = False) -> tuple[Path, Path]:
     process_product_sheet(wb["Tdiesel ULS T2 (OLD LRP)"], data_wb["Tdiesel ULS T2 (OLD LRP)"], next_month_number, next_year)
     process_product_sheet(wb["Tdiesel ULS T4"], data_wb["Tdiesel ULS T4"], next_month_number, next_year)
 
+    clear_range(wb["ULP 95 MANUEL (G)"], "R6:S36")
+
     wb.save(target_workbook)
     return source_path, target_workbook
 
