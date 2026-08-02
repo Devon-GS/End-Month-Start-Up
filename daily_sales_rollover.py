@@ -55,24 +55,6 @@ def parse_workbook_name(path: Path) -> tuple[int, int, int]:
 
     return prefix, month, year
 
-
-# def find_latest_tax_year_folder(root: Path) -> Path:
-#     candidates = []
-#     for folder in root.iterdir():
-#         if not folder.is_dir():
-#             continue
-#         match = re.match(r"^DAILY SALES TAX YR MARCH (\d{4}) TO FEB (\d{4})$", folder.name.upper())
-#         if not match:
-#             continue
-#         start_year = int(match.group(1))
-#         end_year = int(match.group(2))
-#         if end_year != start_year + 1:
-#             continue
-#         candidates.append((start_year, folder))
-#     if not candidates:
-#         raise FileNotFoundError(f"No DAILY SALES tax year folders found in {root}")
-#     return sorted(candidates, key=lambda item: item[0])[-1][1]
-
 def find_latest_tax_year_folder(root: Path) -> Path:
     candidates = []
     for folder in root.iterdir():
