@@ -8,13 +8,7 @@ import threading
 from dataclasses import dataclass
 from pathlib import Path
 
-import tkinter as tk
-from tkinter import messagebox, scrolledtext, ttk
-
-try:
-    import customtkinter as ctk
-except ModuleNotFoundError:
-    ctk = None
+import customtkinter as ctk
 
 
 @dataclass(frozen=True)
@@ -39,9 +33,6 @@ SCRIPT_ORDER = [
 
 def resolve_root(root: Path | None) -> Path:
     base = root if root is not None else Path(__file__).resolve().parent
-    main_folder = base / "MAIN FOLDER"
-    if main_folder.exists():
-        return main_folder
     return base
 
 
@@ -114,172 +105,142 @@ def cli_main(argv: list[str] | None = None) -> int:
 class LauncherApp:
     def __init__(self, root_dir: Path) -> None:
         self.root_dir = root_dir
-        self.window = self._build_window()
+        ctk.set_appearance_mode("system")
+        ctk.set_default_color_theme("blue")
+        self.window = ctk.CTk()
+        self.window.title("Monthly Rollover Launcher")
+
+		# --- Center the window on the screen ---
+        window_width = 980
+        window_height = 750
+
+		# Ensure Tkinter has registered the screen dimensions
+        self.window.update_idletasks()
+        
+        screen_width = self.window.winfo_screenwidth()
+        screen_height = self.window.winfo_screenheight()
+
+		 # Calculate the X and Y coordinates to center the window
+        x = int((screen_width / 2) - (window_width / 2))
+        y = int((screen_height / 2) - (window_height / 2))
+
+		# Apply the geometry with the +x+y offset
+        self.window.geometry(f"{window_width}x{window_height}+{x}+{y}")
+        self.window.minsize(900, 600)
+
         self.log_queue: queue.Queue[str] = queue.Queue()
         self.running = False
-        self.dry_run_var = self._make_boolean_var(False)
-        self.script_vars: dict[str, object] = {}
+        self.dry_run_var = ctk.BooleanVar(value=False)
+        self.script_vars: dict[str, ctk.BooleanVar] = {}
+
         self._build_ui()
 
-    def _build_window(self):
-        if ctk is not None:
-            ctk.set_appearance_mode("system")
-            ctk.set_default_color_theme("blue")
-            window = ctk.CTk()
-            window.title("Monthly Rollover Launcher")
-            window.geometry("900x640")
-            window.minsize(820, 560)
-            return window
+    def _modal(self, title: str, message: str) -> None:
+        dialog = ctk.CTkToplevel(self.window)
+        dialog.title(title)
+        dialog.geometry("420x180")
+        dialog.resizable(False, False)
+        dialog.transient(self.window)
+        dialog.grab_set()
 
-        window = tk.Tk()
-        window.title("Monthly Rollover Launcher")
-        window.geometry("900x640")
-        window.minsize(820, 560)
-        return window
+        frame = ctk.CTkFrame(dialog, corner_radius=14)
+        frame.pack(fill="both", expand=True, padx=16, pady=16)
+        frame.grid_columnconfigure(0, weight=1)
 
-    def _make_boolean_var(self, value: bool):
-        if ctk is not None:
-            return ctk.BooleanVar(value=value)
-        return tk.BooleanVar(value=value)
-
-    def _make_string_var(self, value: str):
-        if ctk is not None:
-            return ctk.StringVar(value=value)
-        return tk.StringVar(value=value)
-
-    def _frame(self, parent, **kwargs):
-        if ctk is not None:
-            return ctk.CTkFrame(parent, **kwargs)
-        return ttk.Frame(parent, **kwargs)
-
-    def _label(self, parent, **kwargs):
-        if ctk is not None:
-            return ctk.CTkLabel(parent, **kwargs)
-        return ttk.Label(parent, **kwargs)
-
-    def _button(self, parent, **kwargs):
-        if ctk is not None:
-            return ctk.CTkButton(parent, **kwargs)
-        return ttk.Button(parent, **kwargs)
-
-    def _checkbox(self, parent, **kwargs):
-        if ctk is not None:
-            return ctk.CTkCheckBox(parent, **kwargs)
-        return ttk.Checkbutton(parent, **kwargs)
-
-    def _textbox(self, parent, **kwargs):
-        if ctk is not None:
-            return ctk.CTkTextbox(parent, **kwargs)
-        return scrolledtext.ScrolledText(parent, **kwargs)
+        label = ctk.CTkLabel(frame, text=message, wraplength=360, justify="left")
+        label.grid(row=0, column=0, sticky="w", padx=14, pady=(16, 10))
+        button = ctk.CTkButton(frame, text="OK", command=dialog.destroy)
+        button.grid(row=1, column=0, sticky="e", padx=14, pady=(8, 14))
+        dialog.focus()
 
     def _build_ui(self) -> None:
-        if ctk is not None:
-            self.window.grid_columnconfigure(0, weight=1)
-            self.window.grid_rowconfigure(3, weight=1)
-            container = ctk.CTkFrame(self.window, corner_radius=16)
-            container.grid(row=0, column=0, padx=18, pady=18, sticky="nsew")
-            container.grid_columnconfigure(0, weight=1)
-            container.grid_rowconfigure(3, weight=1)
-        else:
-            self.window.columnconfigure(0, weight=1)
-            self.window.rowconfigure(3, weight=1)
-            container = ttk.Frame(self.window, padding=18)
-            container.grid(row=0, column=0, sticky="nsew")
-            container.columnconfigure(0, weight=1)
-            container.rowconfigure(3, weight=1)
+        self.window.grid_columnconfigure(0, weight=1)
+        self.window.grid_rowconfigure(0, weight=1)        
 
-        title = self._label(
-            container,
-            text="Monthly Rollover Launcher",
-            font=("Segoe UI", 20, "bold"),
+        container = ctk.CTkFrame(self.window, corner_radius=18)
+        container.grid(row=0, column=0, padx=18, pady=18, sticky="nsew")
+        container.grid_columnconfigure(0, weight=1)
+        container.grid_rowconfigure(2, weight=1)
+
+        header = ctk.CTkFrame(container, corner_radius=14)
+        header.grid(row=0, column=0, sticky="ew", padx=14, pady=(14, 10))
+        header.grid_columnconfigure(0, weight=1)
+        ctk.CTkLabel(header, text="Monthly Rollover Launcher", font=("Segoe UI", 24, "bold")).grid(
+            row=0, column=0, sticky="w", padx=16, pady=(14, 2)
         )
-        title.grid(row=0, column=0, sticky="w", padx=4, pady=(4, 0))
-
-        subtitle = self._label(
-            container,
-            text="Pick one script or select multiple. The launcher automatically uses MAIN FOLDER when it exists.",
-            wraplength=820,
+        ctk.CTkLabel(
+            header,
+            text="Select one or more rollover scripts, then run them in a single pass.",
+            wraplength=860,
             justify="left",
+        ).grid(row=1, column=0, sticky="w", padx=16, pady=(0, 14))
+
+        body = ctk.CTkFrame(container, corner_radius=14)
+        body.grid(row=1, column=0, sticky="nsew", padx=14, pady=(0, 12))
+        body.grid_columnconfigure(0, weight=2)
+        body.grid_columnconfigure(1, weight=1)
+        body.grid_rowconfigure(0, weight=1)
+
+        scripts_panel = ctk.CTkFrame(body, corner_radius=12)
+        scripts_panel.grid(row=0, column=0, sticky="nsew", padx=(12, 6), pady=12)
+        scripts_panel.grid_columnconfigure(0, weight=1)
+        scripts_panel.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(scripts_panel, text="Scripts", font=("Segoe UI", 14, "bold")).grid(
+            row=0, column=0, sticky="w", padx=14, pady=(14, 8)
         )
-        subtitle.grid(row=1, column=0, sticky="w", padx=4, pady=(6, 14))
 
-        controls = self._frame(container)
-        controls.grid(row=2, column=0, sticky="ew", padx=4)
-        if ctk is None:
-            controls.columnconfigure(0, weight=1)
-            controls.columnconfigure(1, weight=1)
-
-        left = self._frame(controls)
-        right = self._frame(controls)
-        left.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
-        right.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
-        if ctk is None:
-            left.columnconfigure(0, weight=1)
-            right.columnconfigure(0, weight=1)
-
-        script_box = self._frame(left)
-        script_box.grid(row=0, column=0, sticky="ew")
-        script_title = self._label(script_box, text="Scripts", font=("Segoe UI", 12, "bold"))
-        script_title.grid(row=0, column=0, sticky="w", pady=(0, 8))
-
-        if ctk is not None:
-            scroll = ctk.CTkScrollableFrame(script_box, height=250, corner_radius=12)
-            scroll.grid(row=1, column=0, sticky="nsew")
-            scroll.grid_columnconfigure(0, weight=1)
-        else:
-            scroll = ttk.Frame(script_box)
-            scroll.grid(row=1, column=0, sticky="nsew")
+        scroll = ctk.CTkScrollableFrame(scripts_panel, corner_radius=10)
+        scroll.grid(row=1, column=0, sticky="nsew", padx=14, pady=(0, 14))
+        scroll.grid_columnconfigure(0, weight=1)
 
         for entry in SCRIPT_ORDER:
-            var = self._make_boolean_var(True)
+            var = ctk.BooleanVar(value=True)
             self.script_vars[entry.key] = var
-            label = f"{entry.label}"
-            if ctk is not None:
-                checkbox = ctk.CTkCheckBox(scroll, text=label, variable=var)
-                checkbox.pack(anchor="w", padx=6, pady=3)
-            else:
-                checkbox = ttk.Checkbutton(scroll, text=label, variable=var)
-                checkbox.pack(anchor="w", padx=6, pady=3)
+            ctk.CTkCheckBox(scroll, text=entry.label, variable=var).pack(anchor="w", padx=8, pady=5)
 
-        button_row = self._frame(left)
-        button_row.grid(row=2, column=0, sticky="ew", pady=(12, 0))
-        self._button(button_row, text="Select All", command=self.select_all).pack(side="left", padx=(0, 8))
-        self._button(button_row, text="Clear All", command=self.clear_all).pack(side="left")
+        right_panel = ctk.CTkFrame(body, corner_radius=12)
+        right_panel.grid(row=0, column=1, sticky="nsew", padx=(6, 12), pady=12)
+        right_panel.grid_columnconfigure(0, weight=1)
 
-        options_box = self._frame(right)
-        options_box.grid(row=0, column=0, sticky="nsew")
-        options_title = self._label(options_box, text="Options", font=("Segoe UI", 12, "bold"))
-        options_title.grid(row=0, column=0, sticky="w", pady=(0, 8))
+        ctk.CTkLabel(right_panel, text="Options", font=("Segoe UI", 14, "bold")).grid(
+            row=0, column=0, sticky="w", padx=14, pady=(14, 8)
+        )
 
-        dry_run_cb = self._checkbox(options_box, text="Dry run", variable=self.dry_run_var)
-        if ctk is not None:
-            dry_run_cb.grid(row=1, column=0, sticky="w", pady=(0, 10))
-        else:
-            dry_run_cb.grid(row=1, column=0, sticky="w")
+        options_inner = ctk.CTkFrame(right_panel, corner_radius=10)
+        options_inner.grid(row=1, column=0, sticky="nsew", padx=14, pady=(0, 14))
+        options_inner.grid_columnconfigure(0, weight=1)
 
-        self.run_all_button = self._button(options_box, text="Run Selected", command=self.start_run)
-        self.run_all_button.grid(row=2, column=0, sticky="ew", pady=(8, 8))
+        ctk.CTkCheckBox(options_inner, text="Dry run", variable=self.dry_run_var).grid(
+            row=0, column=0, sticky="w", padx=14, pady=(14, 8)
+        )
+        ctk.CTkButton(options_inner, text="Select All", command=self.select_all).grid(
+            row=1, column=0, sticky="ew", padx=14, pady=(8, 6)
+        )
+        ctk.CTkButton(options_inner, text="Clear All", command=self.clear_all).grid(
+            row=2, column=0, sticky="ew", padx=14, pady=6
+        )
+        ctk.CTkButton(options_inner, text="Run Selected", command=self.start_run).grid(
+            row=3, column=0, sticky="ew", padx=14, pady=(12, 6)
+        )
+        ctk.CTkButton(options_inner, text="Run All", command=self.start_run_all).grid(
+            row=4, column=0, sticky="ew", padx=14, pady=6
+        )
+        ctk.CTkButton(options_inner, text="Close", command=self.window.destroy).grid(
+            row=5, column=0, sticky="ew", padx=14, pady=(12, 14)
+        )
 
-        self.run_all_only_button = self._button(options_box, text="Run All", command=self.start_run_all)
-        self.run_all_only_button.grid(row=3, column=0, sticky="ew", pady=(0, 8))
-
-        self.close_button = self._button(options_box, text="Close", command=self.window.destroy)
-        self.close_button.grid(row=4, column=0, sticky="ew")
-
-        log_label = self._label(container, text="Output", font=("Segoe UI", 12, "bold"))
-        log_label.grid(row=3, column=0, sticky="w", padx=4, pady=(14, 6))
-
-        log_frame = self._frame(container)
-        log_frame.grid(row=4, column=0, sticky="nsew", padx=4, pady=(0, 4))
+        log_frame = ctk.CTkFrame(container, corner_radius=14)
+        log_frame.grid(row=2, column=0, sticky="nsew", padx=14, pady=(0, 14))
         log_frame.grid_columnconfigure(0, weight=1)
-        log_frame.grid_rowconfigure(0, weight=1)
+        log_frame.grid_rowconfigure(1, weight=1)
 
-        if ctk is not None:
-            self.log_widget = ctk.CTkTextbox(log_frame, wrap="word")
-            self.log_widget.grid(row=0, column=0, sticky="nsew")
-        else:
-            self.log_widget = scrolledtext.ScrolledText(log_frame, wrap="word", state="disabled")
-            self.log_widget.grid(row=0, column=0, sticky="nsew")
+        ctk.CTkLabel(log_frame, text="Output", font=("Segoe UI", 14, "bold")).grid(
+            row=0, column=0, sticky="w", padx=14, pady=(14, 8)
+        )
+
+        self.log_widget = ctk.CTkTextbox(log_frame, wrap="word")
+        self.log_widget.grid(row=1, column=0, sticky="nsew", padx=14, pady=(0, 14))
 
         self._append_log("Ready.")
         self.window.after(100, self._drain_log_queue)
@@ -296,14 +257,8 @@ class LauncherApp:
         return [entry for entry in SCRIPT_ORDER if bool(self.script_vars[entry.key].get())]
 
     def _append_log(self, text: str) -> None:
-        if ctk is not None:
-            self.log_widget.insert("end", text + "\n")
-            self.log_widget.see("end")
-        else:
-            self.log_widget.configure(state="normal")
-            self.log_widget.insert("end", text + "\n")
-            self.log_widget.see("end")
-            self.log_widget.configure(state="disabled")
+        self.log_widget.insert("end", text + "\n")
+        self.log_widget.see("end")
 
     def _log(self, text: str) -> None:
         self.log_queue.put(text)
@@ -321,13 +276,27 @@ class LauncherApp:
         else:
             self.window.after(200, self._drain_log_queue)
 
-    def _disable_buttons(self, disabled: bool) -> None:
-        state = "disabled" if disabled else "normal"
-        for widget in (self.run_all_button, self.run_all_only_button, self.close_button):
+    def _set_controls_enabled(self, enabled: bool) -> None:
+        state = "normal" if enabled else "disabled"
+        for child in self.window.winfo_children():
             try:
-                widget.configure(state=state)
+                child.configure(state=state)
             except Exception:
                 pass
+
+    def _start_run(self, selected: list[ScriptEntry]) -> None:
+        if self.running:
+            return
+        if not selected:
+            self._modal("Monthly Rollover Launcher", "Select at least one script to run.")
+            return
+
+        self.running = True
+        self._append_log("")
+        self._append_log("Starting run...")
+
+        worker = threading.Thread(target=self._run_worker, args=(selected,), daemon=True)
+        worker.start()
 
     def start_run(self) -> None:
         self._start_run(self._selected_entries())
@@ -335,32 +304,16 @@ class LauncherApp:
     def start_run_all(self) -> None:
         self._start_run(list(SCRIPT_ORDER))
 
-    def _start_run(self, selected: list[ScriptEntry]) -> None:
-        if self.running:
-            return
-        if not selected:
-            messagebox.showwarning("Monthly Rollover Launcher", "Select at least one script to run.")
-            return
-
-        self.running = True
-        self._disable_buttons(True)
-        self._append_log("")
-        self._append_log("Starting run...")
-
-        worker = threading.Thread(target=self._run_worker, args=(selected,), daemon=True)
-        worker.start()
-
     def _run_worker(self, selected: list[ScriptEntry]) -> None:
         ok = run_scripts(selected, self.root_dir, bool(self.dry_run_var.get()), self._log)
         self.window.after(0, self._finish_run, ok)
 
     def _finish_run(self, ok: bool) -> None:
         self.running = False
-        self._disable_buttons(False)
         if ok:
-            messagebox.showinfo("Monthly Rollover Launcher", "All selected rollover scripts completed successfully.")
+            self._modal("Monthly Rollover Launcher", "All selected rollover scripts completed successfully.")
         else:
-            messagebox.showerror("Monthly Rollover Launcher", "One or more rollover scripts failed. See the log for details.")
+            self._modal("Monthly Rollover Launcher", "One or more rollover scripts failed. See the log for details.")
 
     def run(self) -> None:
         self.window.mainloop()
