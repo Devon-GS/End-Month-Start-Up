@@ -36,7 +36,13 @@ def resolve_root(root: Path | None) -> Path:
         return root
     # PyInstaller extracts bundled files to sys._MEIPASS
     if getattr(sys, 'frozen', False):
-        return Path(sys._MEIPASS)
+        return Path(sys.executable).parent
+    return Path(__file__).resolve().parent
+
+
+def resolve_script_dir() -> Path:
+    if getattr(sys, 'frozen', False):
+        return Path(sys._MEIPASS)  # Points to _internal where PyInstaller stores bundled scripts
     return Path(__file__).resolve().parent
 
 
@@ -54,9 +60,11 @@ def run_script(script_path: Path, root: Path, dry_run: bool) -> subprocess.Compl
 
 
 def run_scripts(selected: list[ScriptEntry], workspace_root: Path, dry_run: bool, log) -> bool:
+    script_dir = resolve_script_dir()
     failures: list[tuple[str, int]] = []
+    
     for entry in selected:
-        script_path = workspace_root / entry.filename
+        script_path = script_dir / entry.filename
         log(f"[{entry.key}] Running {script_path.name}")
         if not script_path.exists():
             log(f"[{entry.key}] Missing script: {script_path}")
