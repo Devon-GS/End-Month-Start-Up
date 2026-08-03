@@ -112,7 +112,7 @@ class LauncherApp:
 
 		# --- Center the window on the screen ---
         window_width = 980
-        window_height = 750
+        window_height = 720
 
 		# Ensure Tkinter has registered the screen dimensions
         self.window.update_idletasks()
