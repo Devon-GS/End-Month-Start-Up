@@ -1,0 +1,25 @@
+[project]
+name = "end-month-start-up"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Devon",email = "ds.pydev@gmail.com"}
+]
+requires-python =  ">=3.10, <3.16"
+dependencies = [
+    "openpyxl (==3.1.5)",
+    "et-xmlfile (==2.0.0)",
+    "customtkinter (>=6.0.0,<7.0.0)"
+]
+
+[tool.poetry]
+package-mode = false
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pyinstaller (>=6.21.0,<7.0.0)"
+]

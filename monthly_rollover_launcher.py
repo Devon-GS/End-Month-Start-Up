@@ -32,14 +32,24 @@ SCRIPT_ORDER = [
 
 
 def resolve_root(root: Path | None) -> Path:
-    base = root if root is not None else Path(__file__).resolve().parent
-    return base
+    if root is not None:
+        return root
+    # PyInstaller extracts bundled files to sys._MEIPASS
+    if getattr(sys, 'frozen', False):
+        return Path(sys._MEIPASS)
+    return Path(__file__).resolve().parent
 
 
 def run_script(script_path: Path, root: Path, dry_run: bool) -> subprocess.CompletedProcess[str]:
-    command = [sys.executable, str(script_path), "--root", str(root)]
+    # If compiled to an EXE, use our secret flag to tell the EXE to run a python script
+    if getattr(sys, 'frozen', False):
+        command = [sys.executable, "--internal-runscript", str(script_path), "--root", str(root)]
+    else:
+        command = [sys.executable, str(script_path), "--root", str(root)]
+        
     if dry_run:
         command.append("--dry-run")
+        
     return subprocess.run(command, check=False, capture_output=True, text=True)
 
 
@@ -320,6 +330,15 @@ class LauncherApp:
 
 
 def main(argv: list[str] | None = None) -> int:
+     # Intercept the secret flag from our subprocess command
+    if len(sys.argv) >= 2 and sys.argv[1] == "--internal-runscript":
+        import runpy
+        # Rewrite sys.argv so the target script gets the arguments it expects
+        sys.argv = sys.argv[2:] 
+        # Run the script exactly as if python.exe ran it
+        runpy.run_path(sys.argv[0], run_name="__main__")
+        return 0
+    
     if argv is None:
         argv = sys.argv[1:]
 
