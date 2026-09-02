@@ -152,6 +152,7 @@ def process_gas_bottles(root: Path, dry_run: bool = False) -> tuple[Path, Path]:
     ws.title = f"GAS RECON {month_name(next_month_number)} {next_year}"
     wb.active = wb.sheetnames.index(ws.title)
 
+    clear_range(ws, "A5:A35")
     set_date_range(ws, 5, next_month_number, next_year)
 
     b36_value = source_ws["B36"].value
@@ -178,6 +179,10 @@ def process_gas_bottles(root: Path, dry_run: bool = False) -> tuple[Path, Path]:
 
     clear_range(ws, "B5:I37")
     clear_range(ws, "J4:J37")
+
+    ws["B5"] = "=I4" 
+    ws["C5"] = "=C4-E4+H4+F4-G4" 
+    ws["I5"] = "=B5+D5-F5" 
 
     wb.save(target_workbook)
     return source_workbook, target_workbook
