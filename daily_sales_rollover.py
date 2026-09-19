@@ -104,8 +104,8 @@ def set_date_range(ws, start_row: int, month: int, year: int) -> None:
 
 def update_reference_dates(ws, month: int, year: int) -> None:
 	ref_date = date(year, month, 1)
-	ws["B40"] = ref_date
-	ws["B41"] = ref_date
+	ws["B40"] = date(year - 1, month, 1)
+	ws["B41"] = date(year - 2, month, 1)
 
 
 def update_monthly_day_range(ws, start_row: int, month: int, year: int) -> None:
