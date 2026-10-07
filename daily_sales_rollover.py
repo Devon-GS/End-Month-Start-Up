@@ -119,20 +119,33 @@ def update_monthly_day_range(ws, start_row: int, month: int, year: int) -> None:
 def process_product_sheet(ws, data_ws, month: int, year: int) -> None:
 	update_monthly_day_range(ws, 6, month, year)
 
-	k36_value = data_ws["K36"].value
-	if k36_value is None or k36_value == 0 or k36_value == "0":
-		k36_value = data_ws["K35"].value
-	ws["K2"] = k36_value
+	if ws.title == "ULP 95 MANUEL (G)":
+		k36_value = data_ws["K36"].value
+		if k36_value is None or k36_value == 0 or k36_value == "0":
+			k36_value = data_ws["K35"].value
+		ws["K2"] = k36_value
+	
+		t36_value = data_ws["T36"].value
+		if t36_value is None or t36_value == 0 or t36_value == "0":
+			t36_value = data_ws["T35"].value
+		ws["T2"] = t36_value
+	
+		clear_range(ws, "R6:S36")
+	else:
+		k36_value = data_ws["K36"].value
+		if k36_value is None or k36_value == 0 or k36_value == "0":
+			k36_value = data_ws["K35"].value
+		ws["K2"] = k36_value
 
-	t36_value = data_ws["T36"].value
-	if t36_value is None or t36_value == 0 or t36_value == "0":
-		t36_value = data_ws["T35"].value
-	ws["T2"] = t36_value
+		t36_value = data_ws["T36"].value
+		if t36_value is None or t36_value == 0 or t36_value == "0":
+			t36_value = data_ws["T35"].value
+		ws["T2"] = t36_value
 
-	clear_range(ws, "B6:J36")
-	clear_range(ws, "M6:M36")
-	clear_range(ws, "O6:P36")
-	clear_range(ws, "R6:S36")
+		clear_range(ws, "B6:J36")
+		clear_range(ws, "M6:M36")
+		clear_range(ws, "O6:P36")
+		clear_range(ws, "R6:S36")
 
 
 def process_daily_sales(root: Path, dry_run: bool = False) -> tuple[Path, Path]:
@@ -200,7 +213,6 @@ def process_daily_sales(root: Path, dry_run: bool = False) -> tuple[Path, Path]:
 	process_product_sheet(wb["Tdiesel ULS T4"], data_wb["Tdiesel ULS T4"], next_month_number, next_year)
 
 	process_product_sheet(wb["ULP 95 MANUEL (G)"], data_wb["ULP 95 MANUEL (G)"], next_month_number, next_year)
-	clear_range(wb["ULP 95 MANUEL (G)"], "R6:S36")
 
 	wb.save(target_workbook)
 	return source_path, target_workbook
