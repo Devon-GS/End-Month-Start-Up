@@ -163,6 +163,8 @@ def process_speed_point_control(root: Path, dry_run: bool = False) -> tuple[Path
         "E42:E73",
         "G4:P33",
         "G42:P73",
+        "R4:S33",
+		"R42:S73",
     ]:
         remove_highlight(ws, cell_range)
 
